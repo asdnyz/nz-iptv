@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+
 try:
     from channels import CHANNELS
 except ImportError:
@@ -34,25 +35,28 @@ def generate_iptv_html():
         .header {{ padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }}
         .logo {{ font-weight: 800; color: #3eaf7c; }}
         .search-container {{ padding: 0 20px 20px; }}
-        #channelSearch {{ width: 100%; padding: 12px; border-radius: 8px; background: #1a1a1a; border: 1px solid #333; color: #fff; }}
+        #channelSearch {{ width: 100%; padding: 12px; border-radius: 8px; background: #1a1a1a; border: 1px solid #333; color: #fff; outline: none; }}
+        #channelSearch:focus {{ border-color: #3eaf7c; }}
         .container {{ padding: 0 20px 50px; }}
         .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }}
-        .channel-card {{ background: #1a1a1a; border-radius: 12px; padding: 20px; cursor: pointer; border: 1px solid #222; transition: 0.2s; }}
-        .channel-card:hover {{ border-color: #3eaf7c; transform: translateY(-3px); }}
-        .channel-cat {{ font-size: 10px; color: #3eaf7c; text-transform: uppercase; margin-bottom: 5px; }}
+        .channel-card {{ background: #1a1a1a; border-radius: 12px; padding: 20px; cursor: pointer; border: 1px solid #222; transition: 0.2s; position: relative; }}
+        .channel-card:hover {{ border-color: #3eaf7c; transform: translateY(-3px); background: #222; }}
+        .channel-cat {{ font-size: 10px; color: #3eaf7c; text-transform: uppercase; margin-bottom: 5px; font-weight: 800; }}
+        .channel-name {{ font-weight: 800; }}
+        .play-overlay {{ position: absolute; bottom: 10px; right: 10px; font-size: 10px; opacity: 0.3; }}
         @media (max-width: 600px) {{ .grid {{ grid-template-columns: 1fr 1fr; }} }}
     </style>
 </head>
 <body>
     <div class="player-container">
-        <video id="main-player" class="video-js vjs-big-play-centered" controls preload="auto" muted data-setup='{{}}'>
+        <video id="main-player" class="video-js vjs-big-play-centered" controls preload="auto" muted playsinline data-setup='{{}}'>
             <p class="vjs-no-js">To view this video please enable JavaScript</p>
         </video>
     </div>
 
     <div class="header">
         <div class="logo">NZ-IPTV // PRO</div>
-        <div id="now-playing" style="font-family: 'JetBrains Mono'; font-size: 12px; color: #888;">SELECT A CHANNEL</div>
+        <div id="now-playing" style="font-family: 'JetBrains Mono'; font-size: 11px; color: #888;">READY TO STREAM</div>
     </div>
 
     <div class="search-container">
@@ -68,15 +72,20 @@ def generate_iptv_html():
         var player = videojs('main-player');
 
         function playChannel(url, name) {{
+            // Force reset the player state
+            player.pause();
             player.src({{ src: url, type: 'application/x-mpegURL' }});
+            player.load();
             
-            // Modern browsers require a promise check for .play()
+            // Unmute shortly after play starts (most browsers allow this after user interaction)
             var playPromise = player.play();
             if (playPromise !== undefined) {{
                 playPromise.then(_ => {{
                     document.getElementById('now-playing').innerText = "LIVE: " + name.toUpperCase();
+                    player.muted(false); // Try to unmute once playing
                 }}).catch(error => {{
-                    console.log("Autoplay blocked. Click play manually.");
+                    console.log("Autoplay blocked. User interaction required.");
+                    document.getElementById('now-playing').innerText = "TAP PLAY BUTTON TO START";
                 }});
             }}
             window.scrollTo({{ top: 0, behavior: 'smooth' }});
@@ -91,13 +100,20 @@ def generate_iptv_html():
                 card.style.display = (name.includes(input) || cat.includes(input)) ? "" : "none";
             }}
         }}
+
+        // Error handling for CORS/Expired links
+        player.on('error', function() {{
+            let error = player.error();
+            console.log("Video Error:", error);
+            alert("This stream is blocked or expired. Link rotation required.");
+        }});
     </script>
 </body>
 </html>"""
     
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(full_html)
-    print("🚀 Dashboard updated with playback fixes!")
+    print("🚀 Dashboard regenerated with playback stability fixes!")
 
 if __name__ == "__main__":
     generate_iptv_html()
