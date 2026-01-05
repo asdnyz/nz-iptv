@@ -1,23 +1,22 @@
 import os
 from datetime import datetime
-
-# --- 1. CHANNEL CONFIGURATION ---
-# Format: "Channel Name": ["M3U8_URL", "Category"]
-CHANNELS = {
-    "India Today": ["https://indiatodaylive-lh.akamaihd.net/i/itw_en@523030/index_1200_av-p.m3u8", "News"],
-    "Republic World": ["https://republic-hls.akamaized.net/hls/live/2022416/republic/playlist.m3u8", "News"],
-    "DW News (English)": ["https://dwstream72-lh.akamaihd.net/i/dwstream72_1@123556/master.m3u8", "Global"],
-    "Al Jazeera": ["https://live-alsat7.akamaized.net/hls/live/2014235/alsat7/playlist.m3u8", "Global"],
-    "NASA TV": ["https://ntv1.akamaized.net/hls/live/2014049/NASA-NTV1-HLS/master.m3u8", "Science"]
-}
+# Import the channel list from your separate file
+try:
+    from channels import CHANNELS
+except ImportError:
+    print("Error: channels.py not found. Please create it with a CHANNELS dictionary.")
+    CHANNELS = {}
 
 def generate_iptv_html():
     # Build the Channel Grid
     grid_html = ""
-    for name, data in CHANNELS.items():
+    # Sort channels alphabetically by name for a better UI
+    sorted_channels = dict(sorted(CHANNELS.items()))
+    
+    for name, data in sorted_channels.items():
         url, cat = data[0], data[1]
         grid_html += f"""
-        <div class="channel-card" onclick="playChannel('{url}', '{name}')">
+        <div class="channel-card" data-name="{name.lower()}" data-cat="{cat.lower()}" onclick="playChannel('{url}', '{name}')">
             <div class="channel-cat">{cat}</div>
             <div class="channel-name">{name}</div>
             <div class="play-overlay">▶ PLAY</div>
@@ -50,9 +49,18 @@ def generate_iptv_html():
         .video-js {{ width: 100%; height: 100%; }}
 
         /* UI Elements */
-        .header {{ padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }}
+        .header {{ padding: 20px 30px 10px; display: flex; justify-content: space-between; align-items: center; }}
         .logo {{ font-weight: 800; font-size: 1.2rem; letter-spacing: -1px; color: #3eaf7c; }}
         .status {{ font-family: 'JetBrains Mono'; font-size: 12px; color: #888; }}
+
+        /* Search Bar */
+        .search-container {{ padding: 10px 20px 20px; }}
+        #channelSearch {{
+            width: 100%; padding: 12px 20px; border-radius: 8px;
+            background: #1a1a1a; border: 1px solid #333; color: #fff;
+            font-family: 'Inter', sans-serif; outline: none; transition: 0.3s;
+        }}
+        #channelSearch:focus {{ border-color: #3eaf7c; background: #222; }}
 
         /* Channel Grid */
         .container {{ padding: 0 20px 50px; }}
@@ -92,8 +100,12 @@ def generate_iptv_html():
         <div class="status" id="now-playing">SELECT A CHANNEL</div>
     </div>
 
+    <div class="search-container">
+        <input type="text" id="channelSearch" placeholder="Search channels or categories..." onkeyup="filterChannels()">
+    </div>
+
     <main class="container">
-        <div class="grid">{grid_html}</div>
+        <div class="grid" id="channelGrid">{grid_html}</div>
     </main>
 
     <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
@@ -107,7 +119,21 @@ def generate_iptv_html():
             window.scrollTo({{ top: 0, behavior: 'smooth' }});
         }}
 
-        // Handle errors (broken links)
+        function filterChannels() {{
+            let input = document.getElementById('channelSearch').value.toLowerCase();
+            let cards = document.getElementsByClassName('channel-card');
+            
+            for (let card of cards) {{
+                let name = card.getAttribute('data-name');
+                let cat = card.getAttribute('data-cat');
+                if (name.includes(input) || cat.includes(input)) {{
+                    card.style.display = "";
+                }} else {{
+                    card.style.display = "none";
+                }}
+            }}
+        }}
+
         player.on('error', function() {{
             alert("Stream currently unavailable. Links rotate frequently.");
         }});
@@ -117,7 +143,7 @@ def generate_iptv_html():
     
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(full_html)
-    print("🚀 nz-iptv dashboard generated successfully!")
+    print(f"🚀 nz-iptv dashboard generated successfully at {{datetime.now().strftime('%H:%M:%S')}}!")
 
 if __name__ == "__main__":
     generate_iptv_html()
