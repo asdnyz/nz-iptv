@@ -1,16 +1,12 @@
 import os
 from datetime import datetime
-# Import the channel list from your separate file
 try:
     from channels import CHANNELS
 except ImportError:
-    print("Error: channels.py not found. Please create it with a CHANNELS dictionary.")
-    CHANNELS = {}
+    CHANNELS = {"Error": ["", "Missing channels.py"]}
 
 def generate_iptv_html():
-    # Build the Channel Grid
     grid_html = ""
-    # Sort channels alphabetically by name for a better UI
     sorted_channels = dict(sorted(CHANNELS.items()))
     
     for name, data in sorted_channels.items():
@@ -27,81 +23,40 @@ def generate_iptv_html():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#000000">
-    <meta name="mobile-web-app-capable" content="yes">
-    <link rel="manifest" href="manifest.json">
     <title>NZ-IPTV PRO</title>
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
     <style>
         * {{ box-sizing: border-box; -webkit-tap-highlight-color: transparent; }}
-        body {{ 
-            margin: 0; background: #000; color: #fff; 
-            font-family: 'Inter', sans-serif; overflow-x: hidden; 
-        }}
-        
-        /* Player Section */
-        .player-container {{
-            width: 100%; aspect-ratio: 16 / 9;
-            background: #111; position: sticky; top: 0; z-index: 1000;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }}
+        body {{ margin: 0; background: #000; color: #fff; font-family: 'Inter', sans-serif; }}
+        .player-container {{ width: 100%; aspect-ratio: 16 / 9; background: #111; position: sticky; top: 0; z-index: 1000; }}
         .video-js {{ width: 100%; height: 100%; }}
-
-        /* UI Elements */
-        .header {{ padding: 20px 30px 10px; display: flex; justify-content: space-between; align-items: center; }}
-        .logo {{ font-weight: 800; font-size: 1.2rem; letter-spacing: -1px; color: #3eaf7c; }}
-        .status {{ font-family: 'JetBrains Mono'; font-size: 12px; color: #888; }}
-
-        /* Search Bar */
-        .search-container {{ padding: 10px 20px 20px; }}
-        #channelSearch {{
-            width: 100%; padding: 12px 20px; border-radius: 8px;
-            background: #1a1a1a; border: 1px solid #333; color: #fff;
-            font-family: 'Inter', sans-serif; outline: none; transition: 0.3s;
-        }}
-        #channelSearch:focus {{ border-color: #3eaf7c; background: #222; }}
-
-        /* Channel Grid */
+        .header {{ padding: 20px 30px; display: flex; justify-content: space-between; align-items: center; }}
+        .logo {{ font-weight: 800; color: #3eaf7c; }}
+        .search-container {{ padding: 0 20px 20px; }}
+        #channelSearch {{ width: 100%; padding: 12px; border-radius: 8px; background: #1a1a1a; border: 1px solid #333; color: #fff; }}
         .container {{ padding: 0 20px 50px; }}
-        .grid {{ 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
-            gap: 15px; 
-        }}
-        .channel-card {{
-            background: #1a1a1a; border-radius: 12px; padding: 20px;
-            cursor: pointer; transition: 0.2s; border: 1px solid #222;
-            position: relative; overflow: hidden;
-        }}
-        .channel-card:hover {{ background: #222; border-color: #3eaf7c; transform: translateY(-3px); }}
-        .channel-cat {{ font-size: 10px; font-weight: 800; color: #3eaf7c; text-transform: uppercase; margin-bottom: 8px; }}
-        .channel-name {{ font-size: 1rem; font-weight: 800; line-height: 1.2; }}
-        .play-overlay {{
-            position: absolute; bottom: 0; right: 0; padding: 10px;
-            font-size: 10px; font-weight: 800; opacity: 0.3;
-        }}
-
-        @media (max-width: 600px) {{
-            .grid {{ grid-template-columns: 1fr 1fr; }}
-            html {{ font-size: 14px; }}
-        }}
+        .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }}
+        .channel-card {{ background: #1a1a1a; border-radius: 12px; padding: 20px; cursor: pointer; border: 1px solid #222; transition: 0.2s; }}
+        .channel-card:hover {{ border-color: #3eaf7c; transform: translateY(-3px); }}
+        .channel-cat {{ font-size: 10px; color: #3eaf7c; text-transform: uppercase; margin-bottom: 5px; }}
+        @media (max-width: 600px) {{ .grid {{ grid-template-columns: 1fr 1fr; }} }}
     </style>
 </head>
 <body>
     <div class="player-container">
-        <video id="main-player" class="video-js vjs-big-play-centered" controls preload="auto" data-setup='{{}}'>
+        <video id="main-player" class="video-js vjs-big-play-centered" controls preload="auto" muted data-setup='{{}}'>
             <p class="vjs-no-js">To view this video please enable JavaScript</p>
         </video>
     </div>
 
     <div class="header">
         <div class="logo">NZ-IPTV // PRO</div>
-        <div class="status" id="now-playing">SELECT A CHANNEL</div>
+        <div id="now-playing" style="font-family: 'JetBrains Mono'; font-size: 12px; color: #888;">SELECT A CHANNEL</div>
     </div>
 
     <div class="search-container">
-        <input type="text" id="channelSearch" placeholder="Search channels or categories..." onkeyup="filterChannels()">
+        <input type="text" id="channelSearch" placeholder="Search channels..." onkeyup="filterChannels()">
     </div>
 
     <main class="container">
@@ -114,36 +69,35 @@ def generate_iptv_html():
 
         function playChannel(url, name) {{
             player.src({{ src: url, type: 'application/x-mpegURL' }});
-            player.play();
-            document.getElementById('now-playing').innerText = "LIVE: " + name.toUpperCase();
+            
+            // Modern browsers require a promise check for .play()
+            var playPromise = player.play();
+            if (playPromise !== undefined) {{
+                playPromise.then(_ => {{
+                    document.getElementById('now-playing').innerText = "LIVE: " + name.toUpperCase();
+                }}).catch(error => {{
+                    console.log("Autoplay blocked. Click play manually.");
+                }});
+            }}
             window.scrollTo({{ top: 0, behavior: 'smooth' }});
         }}
 
         function filterChannels() {{
             let input = document.getElementById('channelSearch').value.toLowerCase();
             let cards = document.getElementsByClassName('channel-card');
-            
             for (let card of cards) {{
                 let name = card.getAttribute('data-name');
                 let cat = card.getAttribute('data-cat');
-                if (name.includes(input) || cat.includes(input)) {{
-                    card.style.display = "";
-                }} else {{
-                    card.style.display = "none";
-                }}
+                card.style.display = (name.includes(input) || cat.includes(input)) ? "" : "none";
             }}
         }}
-
-        player.on('error', function() {{
-            alert("Stream currently unavailable. Links rotate frequently.");
-        }});
     </script>
 </body>
 </html>"""
     
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(full_html)
-    print(f"🚀 nz-iptv dashboard generated successfully at {{datetime.now().strftime('%H:%M:%S')}}!")
+    print("🚀 Dashboard updated with playback fixes!")
 
 if __name__ == "__main__":
     generate_iptv_html()
