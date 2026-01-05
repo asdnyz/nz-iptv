@@ -7,72 +7,75 @@
     <link href="https://vjs.zencdn.net/7.20.3/video-js.css" rel="stylesheet" />
     <style>
         body { margin: 0; background: #000; color: #fff; font-family: sans-serif; }
-        .player-container { width: 100%; aspect-ratio: 16/9; background: #111; position: sticky; top: 0; z-index: 100; }
+        
+        /* Fixed Player at Top */
+        .player-container { 
+            width: 100%; aspect-ratio: 16/9; background: #000; 
+            position: relative; z-index: 1; /* Keeping video on base layer */
+        }
         .video-js { width: 100%; height: 100%; }
-        .header { padding: 20px; border-bottom: 1px solid #222; }
-        .logo { color: #3eaf7c; font-weight: bold; font-size: 20px; }
-        .container { padding: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-        .channel-card { background: #1a1a1a; padding: 15px; border-radius: 8px; cursor: pointer; border: 1px solid #333; }
-        .channel-card:hover { border-color: #3eaf7c; }
+
+        /* Elevating UI to prevent "Blackout" */
+        .ui-overlay { 
+            position: relative; z-index: 100; /* Higher priority than video */
+            background: #000; padding-bottom: 50px;
+        }
+        
+        .header { padding: 20px; border-bottom: 1px solid #333; }
+        .logo { color: #3eaf7c; font-weight: bold; font-size: 22px; }
+        .grid { 
+            display: grid; padding: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; 
+        }
+        .channel-card { 
+            background: #111; padding: 15px; border-radius: 8px; 
+            cursor: pointer; border: 1px solid #222; 
+        }
+        .channel-card:hover { border-color: #3eaf7c; background: #1a1a1a; }
         .channel-cat { font-size: 10px; color: #3eaf7c; text-transform: uppercase; }
     </style>
 </head>
 <body>
+    <div class="ui-overlay">
+        <div class="header">
+            <div class="logo">NZ-IPTV // PRO</div>
+            <div id="status" style="font-size: 12px; color: #888; margin-top: 5px;">SELECT A CHANNEL</div>
+        </div>
+        <div class="grid">
+        <div class="channel-card" onclick="playChannel('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', '1. TEST: Bunny (Always Works)')">
+            <div class="channel-cat">Test</div>
+            <div class="channel-name">1. TEST: Bunny (Always Works)</div>
+        </div>
+        <div class="channel-card" onclick="playChannel('https://live-hls-web-aje.getaj.net/AJE/index.m3u8', '2. Al Jazeera (English)')">
+            <div class="channel-cat">Global</div>
+            <div class="channel-name">2. Al Jazeera (English)</div>
+        </div>
+        <div class="channel-card" onclick="playChannel('https://dwstream72-lh.akamaihd.net/i/dwstream72_1@123556/master.m3u8', '3. DW News')">
+            <div class="channel-cat">Global</div>
+            <div class="channel-name">3. DW News</div>
+        </div>
+        <div class="channel-card" onclick="playChannel('https://ntv1.akamaized.net/hls/live/2014049/NASA-NTV1-HLS/master.m3u8', '4. NASA TV')">
+            <div class="channel-cat">Science</div>
+            <div class="channel-name">4. NASA TV</div>
+        </div>
+        <div class="channel-card" onclick="playChannel('https://static.france24.com/live/F24_EN_LO_HLS/live_web.m3u8', '5. France 24 (English)')">
+            <div class="channel-cat">Global</div>
+            <div class="channel-name">5. France 24 (English)</div>
+        </div></div>
+    </div>
+    
     <div class="player-container">
         <video id="main-player" class="video-js vjs-default-skin" controls preload="auto" muted playsinline></video>
     </div>
 
-    <div class="header">
-        <div class="logo">NZ-IPTV // PRO</div>
-        <div id="status" style="font-size: 12px; color: #888; margin-top: 5px;">READY</div>
-    </div>
-
-    <div class="container">
-        <div class="grid">
-            <div class="channel-card" data-name="1. test: bunny (always works)" data-cat="test" onclick="playChannel('https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8', '1. TEST: Bunny (Always Works)')">
-                <div class="channel-cat">Test</div>
-                <div class="channel-name">1. TEST: Bunny (Always Works)</div>
-                <div class="play-overlay">▶ PLAY</div>
-            </div>
-            <div class="channel-card" data-name="2. al jazeera (english)" data-cat="global" onclick="playChannel('https://live-hls-web-aje.getaj.net/AJE/index.m3u8', '2. Al Jazeera (English)')">
-                <div class="channel-cat">Global</div>
-                <div class="channel-name">2. Al Jazeera (English)</div>
-                <div class="play-overlay">▶ PLAY</div>
-            </div>
-            <div class="channel-card" data-name="3. dw news" data-cat="global" onclick="playChannel('https://dwstream72-lh.akamaihd.net/i/dwstream72_1@123556/master.m3u8', '3. DW News')">
-                <div class="channel-cat">Global</div>
-                <div class="channel-name">3. DW News</div>
-                <div class="play-overlay">▶ PLAY</div>
-            </div>
-            <div class="channel-card" data-name="4. nasa tv" data-cat="science" onclick="playChannel('https://ntv1.akamaized.net/hls/live/2014049/NASA-NTV1-HLS/master.m3u8', '4. NASA TV')">
-                <div class="channel-cat">Science</div>
-                <div class="channel-name">4. NASA TV</div>
-                <div class="play-overlay">▶ PLAY</div>
-            </div>
-            <div class="channel-card" data-name="5. france 24 (english)" data-cat="global" onclick="playChannel('https://static.france24.com/live/F24_EN_LO_HLS/live_web.m3u8', '5. France 24 (English)')">
-                <div class="channel-cat">Global</div>
-                <div class="channel-name">5. France 24 (English)</div>
-                <div class="play-overlay">▶ PLAY</div>
-            </div></div>
-    </div>
-
     <script src="https://vjs.zencdn.net/7.20.3/video.min.js"></script>
     <script>
-        // Initialize player safely
         var player = videojs('main-player');
-
         function playChannel(url, name) {
-            if(!url) return alert("Broken Link");
-            
-            document.getElementById('status').innerText = "LOADING: " + name;
             player.src({ src: url, type: 'application/x-mpegURL' });
-            
-            player.play().then(() => {
-                document.getElementById('status').innerText = "PLAYING: " + name;
-            }).catch(err => {
-                document.getElementById('status').innerText = "TAP PLAY TO START";
-            });
+            player.play();
+            document.getElementById('status').innerText = "LIVE: " + name;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     </script>
 </body>
